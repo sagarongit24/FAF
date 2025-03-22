@@ -14,13 +14,17 @@
     "react-player": "^2.16.0",
     "react-router-dom": "^6.28.0",
     "react-scripts": "^5.0.1",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "serve": "^14.2.0",
+    "dotenv": "^16.3.1"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "vercel-build": "npm run build",
+    "preview": "serve -s build"
   },
   "eslintConfig": {
     "extends": [
@@ -30,14 +34,14 @@
   },
   "browserslist": {
     "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
+      ">0.5%",
+      "last 2 versions",
+      "not dead"
     ],
     "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
+      "last 2 chrome versions",
+      "last 2 firefox versions",
+      "last 2 safari versions"
     ]
   },
   "devDependencies": {
