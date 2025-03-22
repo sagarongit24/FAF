@@ -1,0 +1,153 @@
+:root {
+  --night: #0a100dff;
+  --ash-gray: #b9baa3ff;
+  --timberwolf: #d6d5c9ff;
+  --auburn: #a22c29ff;
+  --burnt-umber: #902923ff;
+}
+
+body {
+  margin: 0;
+  font-family: "Arial", sans-serif;
+  background-color: var(--ash-gray);
+}
+
+.welcome-dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 60vh;
+  gap: 20px;
+  padding: 10px;
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--ash-gray);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+}
+
+.clapboard,
+.music-container {
+  width: 80%;
+  height: 120%;
+  background-color: var(--timberwolf);
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.clapboard {
+  position: relative;
+  margin-bottom: -40px;
+}
+
+.clap-stripe {
+  position: absolute;
+  height: 45px;
+  background-color: var(--auburn);
+}
+
+.clap-stripe-1 {
+  top: 60px;
+  left: 5%;
+  width: 90%;
+  transform: rotate(350deg);
+  transform-origin: left;
+}
+
+.clap-stripe-2 {
+  top: 90px;
+  left: 5%;
+  width: 90%;
+}
+
+.music-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.staff {
+  position: relative;
+  width: 600px;
+  height: 80px;
+}
+
+.staff-line {
+  width: 100%;
+  height: 2px;
+  background-color: var(--night);
+  margin: 10px 0;
+}
+
+/* Left Connection */
+.left-connection {
+  position: relative;
+  width: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 200px;
+}
+
+.treble-clef,
+.bass-clef {
+  font-size: 60px;
+  font-family: "Bravura", serif;
+  color: var(--auburn);
+}
+
+.treble-clef {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.bass-clef {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+/* Notes */
+.notes {
+  position: absolute;
+  left: 20px;
+  display: flex;
+}
+
+.note {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background-color: var(--burnt-umber);
+  border-radius: 50%;
+}
+
+/* Note Placements on Staff */
+.note-1 {
+  top: -10px; /* 1st line */
+  left: 1cm;
+}
+
+.note-2 {
+  top: -20px; /* 2nd line */
+  left: 2cm;
+}
+
+.note-3 {
+  top: -30px; /* 3rd line */
+  left: 3cm;
+}
+
+.note-4 {
+  top: -40px; /* 4th line */
+  left: 4cm;
+}
+
+.note-5 {
+  top: -50px; /* 5th line */
+  left: 5cm;
+}
