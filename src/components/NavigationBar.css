@@ -1,0 +1,54 @@
+nav.navbar{
+  position: fixed !important;
+  top: auto !important;
+  bottom: 0 !important;
+  left: 0; right: 0;
+  height: 64px;
+  z-index: 1000;
+  background: #1a1f2b;
+  border-top: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 -8px 18px rgba(0,0,0,.35);
+}
+
+
+.header {
+  display: flex;
+  justify-content: space-between; /* Push Home button to the right */
+  align-items: center;
+  padding: 10px;
+  background-color: var(--red-wine);
+}
+
+.tab {
+  padding: 10px 20px;
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.tab.active {
+  background-color: var(--peach);
+}
+
+.tab:hover {
+  background-color: var(--peach);
+}
+
+/* Home Tab Style */
+.home-tab {
+  padding: 10px 20px;
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 20px;
+  transition: background-color 0.3s ease;
+}
+
+/* Add a subtle hover effect */
+.home-tab:hover {
+  transform: scale(1.1); /* Slightly enlarge on hover */
+}
