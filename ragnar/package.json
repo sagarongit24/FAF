@@ -21,10 +21,10 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
     "vercel-build": "npm run build",
-    "preview": "serve -s build"
+    "preview": "serve -s build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
@@ -34,14 +34,15 @@
   },
   "browserslist": {
     "production": [
-      ">0.5%",
-      "last 2 versions",
-      "not dead"
+      ">0.2%",
+      "not dead",
+      "not op_mini all",
+      "last 2 versions"
     ],
     "development": [
-      "last 2 chrome versions",
-      "last 2 firefox versions",
-      "last 2 safari versions"
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
     ]
   },
   "devDependencies": {
