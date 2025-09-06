@@ -2,3 +2,8 @@
 node_modules/
 .cache/
 build/
+
+node_modules/
+build/
+.env
+.env.local
