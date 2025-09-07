@@ -1,42 +1,47 @@
-import React, { useState, useEffect } from "react";
+// src/pages/GalleryPage.jsx
+import React, { useState } from "react";
 import NavigationBar from "../components/NavigationBar";
-import { db, storage } from "../firebaseConfig";
-import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import "../styles/gallery.css";
 
-function GalleryPage() {
-  const [images, setImages] = useState([]);
-  const [newImage, setNewImage] = useState(null);
-  const [albumName, setAlbumName] = useState("");
+const LOGO = "/brand/broadneck.png";
 
-  useEffect(() => {
-    fetchImages();
-  }, []);
-
-  const fetchImages = async () => {
-    const querySnapshot = await getDocs(collection(db, "gallery"));
-    setImages(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-  };
-
-  const handleUpload = async () => {
-    const imageRef = ref(storage, `gallery/${newImage.name}`);
-    await uploadBytes(imageRef, newImage);
-    const url = await getDownloadURL(imageRef);
-
-    await addDoc(collection(db, "gallery"), { album: albumName, imageUrl: url });
-    fetchImages();
-  };
+export default function GalleryPage() {
+  const [search, setSearch] = useState("");
 
   return (
-    <div>
-      <NavigationBar />
-      <input type="file" accept="image/*" onChange={(e) => setNewImage(e.target.files[0])} />
-      <button onClick={handleUpload}>Upload Image</button>
-      {images.map((img) => (
-        <img key={img.id} src={img.imageUrl} alt="Gallery" />
-      ))}
+    <div className="gallery-page">
+      {/* Sticky stack: nav + header */}
+      <div className="sticky-shell">
+        <NavigationBar />
+        <header className="gallery-header header--brand">
+          <div className="brand-left">
+            <img src={LOGO} alt="Broadneck Films" className="brand-logo" />
+            <div className="brand-titles">
+              <h1 className="title">Gallery</h1>
+              <p className="subtitle">Sessions • BTS • Stills</p>
+            </div>
+          </div>
+          <div className="gallery-actions">
+            <input
+              className="search"
+              value={search}
+              onChange={(e)=>setSearch(e.target.value)}
+              placeholder="Search sessions…"
+            />
+          </div>
+        </header>
+      </div>
+
+      {/* Watermark */}
+      <div className="gallery-hero">
+        <img src={LOGO} className="gallery-watermark" alt="" aria-hidden="true" />
+      </div>
+
+      {/* Album grid – empty for now; we’ll populate next */}
+      <div className="album-grid">
+        {/* coming next: map over albums */}
+        <div className="album-empty">No sessions yet. (We’ll add uploads next.)</div>
+      </div>
     </div>
   );
 }
-
-export default GalleryPage;

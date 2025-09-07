@@ -1,128 +1,200 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import "./home.css";
+import {
+  getAuth,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  signOut
+} from "firebase/auth";
+import "../styles/home.css";
 
-// Place your logo at: public/brand/broadneck.png
 const LOGO_SRC = "/brand/broadneck.png";
+/** >>>>>>>>>> PUT YOUR ADMIN UID(S) HERE <<<<<<<<<< */
+const ADMIN_UIDS = ["ADMIN_UIDS"];
 
-// --- Types (Film-centric)
+/* ---------- Hidden long-press trigger ---------- */
+function useLongPress(callback, ms = 1200) {
+  const timerRef = useRef(null);
+  const start = useCallback(() => { timerRef.current = setTimeout(callback, ms); }, [callback, ms]);
+  const clear = useCallback(() => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+  return {
+    onMouseDown: start, onTouchStart: start,
+    onMouseUp: clear, onMouseLeave: clear, onTouchEnd: clear
+  };
+}
+
+/* ---------- Admin state (checks UID allow-list) ---------- */
+function useAdmin() {
+  const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    const auth = getAuth();
+    return onAuthStateChanged(auth, async (u) => {
+      setUser(u || null);
+      const allowed = !!u && ADMIN_UIDS.includes(u.uid);
+      setIsAdmin(allowed);
+      if (u) console.log("Signed in:", u.email, "UID:", u.uid);
+    });
+  }, []);
+  return { user, isAdmin };
+}
+
+/* ---------- Minimal Login Modal (Google + optional magic link) ---------- */
+function LoginModal({ onClose }) {
+  const auth = getAuth();
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      const stored = window.localStorage.getItem("admin-email") || window.prompt("Confirm your email");
+      if (stored) {
+        signInWithEmailLink(auth, stored, window.location.href)
+          .then(() => onClose())
+          .catch((e) => console.error(e));
+      }
+    }
+  }, [auth, onClose]);
+
+  async function signInGoogle() {
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); onClose(); }
+    catch (e) { console.error(e); alert("Google sign-in failed"); }
+  }
+  async function sendMagicLink() {
+    const actionCodeSettings = { url: window.location.origin, handleCodeInApp: true };
+    try {
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem("admin-email", email);
+      alert("Magic link sent. Check your email.");
+    } catch (e) { console.error(e); alert("Failed to send link."); }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e)=>e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>×</button>
+        <h3>Admin Sign-In</h3>
+        <p style={{opacity:.8, marginTop:4}}>Hidden login for site owner.</p>
+
+        <div style={{display:"flex", gap:8, margin:"12px 0"}}>
+          <button className="btn primary" onClick={signInGoogle}>Sign in with Google</button>
+          <button className="btn" onClick={() => signOut(auth)}>Sign out</button>
+        </div>
+
+        <div style={{marginTop:10, borderTop:"1px solid rgba(255,255,255,.12)", paddingTop:10}}>
+          <p style={{margin:"6px 0 8px"}}>Or get a magic link:</p>
+          <input
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e)=>setEmail(e.target.value)}
+            style={{padding:10, width:"100%"}}
+          />
+          <div className="actions" style={{marginTop:8}}>
+            <button className="btn" onClick={sendMagicLink}>Send magic link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Film Timeline local model ---------- */
 /**
  * @typedef {Object} FilmItem
  * @property {string} id
- * @property {string} title        // Film / Project title
- * @property {string} role         // e.g., Actor, Composer, Director, Editor
- * @property {string} releaseDate  // e.g., 2024-08 or just 2024
- * @property {string} description  // Short note (scene, soundtrack style, etc.)
- * @property {string[]} tags       // e.g., ["Short", "Feature", "Indie"]
- * @property {string} posterUrl    // Optional poster/thumbnail URL
- * @property {string} linkTrailer  // Optional trailer / IMDB / YT link
+ * @property {string} title
+ * @property {string} role
+ * @property {string} releaseDate // YYYY or YYYY-MM
+ * @property {string} description
+ * @property {string[]} tags
+ * @property {string} posterUrl
+ * @property {string} linkTrailer
  */
-
 const STORAGE_KEY = "portfolio.filmTimeline.v1";
-
 const uid = () => Math.random().toString(36).slice(2, 10);
 
-const readFromStorage = () => {
+function readFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-};
-
-const writeToStorage = (items) => {
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+function writeToStorage(items) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch {}
-};
+}
 
-export default function Home() {
-  const navigate = useNavigate();
-  const [adminMode, setAdminMode] = useState(false);
-  const [items, setItems] = useState(() =>
-    readFromStorage() ?? [
-      {
-        id: uid(),
-        title: "Finding Rhythm",
-        role: "Composer",
-        releaseDate: "2025-05",
-        description:
-          "Composed and produced the complete original soundtrack (ambient + percussive themes).",
-        tags: ["Short", "OST"],
-        posterUrl: "",
-        linkTrailer: "",
-      },
-      {
-        id: uid(),
-        title: "Streetlight Stories",
-        role: "Actor",
-        releaseDate: "2024-11",
-        description:
-          "Played a supporting role; key scene in Act II at the riverside sequence.",
-        tags: ["Indie"],
-        posterUrl: "",
-        linkTrailer: "",
-      },
-    ]
+/* ---------- Reusable Modal for timeline edit ---------- */
+function Modal({ children, onClose }) {
+  useEffect(() => {
+    const onEsc = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onEsc);
+    return () => document.removeEventListener("keydown", onEsc);
+  }, [onClose]);
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>×</button>
+        {children}
+      </div>
+    </div>
   );
+}
 
+/* ============================== PAGE ============================== */
+function Home() {
+  const navigate = useNavigate();
+  const { isAdmin } = useAdmin();
+  const [loginOpen, setLoginOpen] = useState(false);
+  const longPress = useLongPress(() => setLoginOpen(true), 1200);
+
+  // Optional: keyboard shortcut to sign out (Ctrl+Shift+L)
+  useEffect(() => {
+    const auth = getAuth();
+    const onKey = (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "l") signOut(auth);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Local timeline data (admin-only editable; persisted to localStorage)
+  const [items, setItems] = useState(() => readFromStorage());
   useEffect(() => { writeToStorage(items); }, [items]);
 
   const sortedItems = useMemo(() => {
-    const parse = (d) => (d || "0000-00").padEnd(7, "-00");
-    return [...items].sort((a, b) => (parse(b.releaseDate) > parse(a.releaseDate) ? 1 : -1));
+    const normalize = (d) => (d || "0000-00").padEnd(7, "-00");
+    return [...items].sort((a, b) => (normalize(b.releaseDate) > normalize(a.releaseDate) ? 1 : -1));
   }, [items]);
 
-  // CRUD
-  const addItem = (payload) => setItems((prev) => [{ id: uid(), ...payload }, ...prev]);
-  const updateItem = (id, patch) => setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
-  const deleteItem = (id) => setItems((prev) => prev.filter((it) => it.id !== id));
-  const move = (id, dir) => {
+  function addItem(payload) { setItems((prev) => [{ id: uid(), ...payload }, ...prev]); }
+  function updateItem(id, patch) { setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it))); }
+  function deleteItem(id) { setItems((prev) => prev.filter((it) => it.id !== id)); }
+  function move(id, dir) {
     const order = sortedItems.map((it) => it.id);
-    const i = order.indexOf(id);
-    const j = i + dir;
+    const i = order.indexOf(id), j = i + dir;
     if (i < 0 || j < 0 || j >= order.length) return;
     const reordered = [...sortedItems];
     const [moved] = reordered.splice(i, 1);
     reordered.splice(j, 0, moved);
     setItems(reordered);
-  };
-
-  // Import/Export
-  const exportJSON = () => {
-    const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "film-timeline.json"; a.click(); URL.revokeObjectURL(url);
-  };
-  const importJSON = (file) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result);
-        if (Array.isArray(data)) setItems(data.map((d) => ({ id: uid(), ...d })));
-      } catch { alert("Invalid JSON file"); }
-    };
-    reader.readAsText(file);
-  };
+  }
 
   return (
     <div className="home-root">
-      {/* Header with brand logo */}
+      {/* Header with brand logo (long-press to open hidden login) */}
       <header className="header header--brand">
         <div className="brand-left" onClick={() => navigate("/")} role="button" tabIndex={0}>
-          <img src={LOGO_SRC} alt="Broadneck Films logo" className="brand-logo" />
+          <img src={LOGO_SRC} alt="Broadneck Films logo" className="brand-logo" {...longPress} />
           <div className="brand-titles">
             <h1 className="title">Broadneck Films</h1>
             <p className="subtitle">Filmography & credits</p>
           </div>
         </div>
         <div className="header-actions">
-          <label className="admin-toggle">
-            <input type="checkbox" checked={adminMode} onChange={(e) => setAdminMode(e.target.checked)} />
-            <span>Admin mode</span>
-          </label>
           <button className="btn primary" onClick={() => navigate("/movies")}>Show Work</button>
         </div>
       </header>
@@ -132,15 +204,32 @@ export default function Home() {
         <img src={LOGO_SRC} className="hero-watermark" alt="" aria-hidden="true" />
       </div>
 
-      {/* Admin toolbar */}
-      {adminMode && (
+      {/* Admin toolbar (only visible to you) */}
+      {isAdmin && (
         <div className="toolbar">
           <FilmForm onSubmit={addItem} />
           <div className="io-group">
-            <button className="btn" onClick={exportJSON}>Export JSON</button>
+            <button className="btn" onClick={() => {
+              const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = "film-timeline.json"; a.click(); URL.revokeObjectURL(url);
+            }}>Export JSON</button>
+
             <label className="btn file">Import JSON
-              <input type="file" accept="application/json" onChange={(e) => e.target.files?.[0] && importJSON(e.target.files[0])} />
+              <input type="file" accept="application/json" onChange={(e) => {
+                const f = e.target.files?.[0]; if (!f) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  try {
+                    const data = JSON.parse(reader.result);
+                    if (Array.isArray(data)) setItems(data.map((d) => ({ id: uid(), ...d })));
+                  } catch { alert("Invalid JSON file"); }
+                };
+                reader.readAsText(f);
+              }} />
             </label>
+
             <button className="btn danger" onClick={() => setItems([])}>Clear</button>
           </div>
         </div>
@@ -149,13 +238,13 @@ export default function Home() {
       {/* Timeline */}
       <section className="timeline">
         {sortedItems.length === 0 ? (
-          <p className="empty">No films yet. {adminMode ? "Add your first credit above." : ""}</p>
+          <p className="empty">No films yet.</p>
         ) : (
           sortedItems.map((item) => (
             <FilmCard
               key={item.id}
               item={item}
-              admin={adminMode}
+              admin={isAdmin}
               onEdit={(patch) => updateItem(item.id, patch)}
               onDelete={() => deleteItem(item.id)}
               onMoveUp={() => move(item.id, -1)}
@@ -165,37 +254,42 @@ export default function Home() {
         )}
       </section>
 
+      {/* Footer nav */}
       <footer className="footer">
         <button className="btn ghost" onClick={() => navigate("/music")}>Music</button>
         <button className="btn ghost" onClick={() => navigate("/gallery")}>Gallery</button>
       </footer>
+
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+
+      {/* Discreet sign-out chip (only visible when admin) */}
+      {isAdmin && (
+        <button
+          className="admin-chip"
+          onClick={() => signOut(getAuth())}
+          title="Sign out (Ctrl+Shift+L)"
+        >
+          Admin • Sign out
+        </button>
+      )}
     </div>
   );
 }
 
+/* ---------- Timeline components ---------- */
 function FilmForm({ onSubmit, initial }) {
-  const [form, setForm] = useState(
-    initial || {
-      title: "",
-      role: "",
-      releaseDate: "",
-      description: "",
-      tags: "",
-      posterUrl: "",
-      linkTrailer: "",
-    }
-  );
-
+  const [form, setForm] = useState(initial || {
+    title: "", role: "", releaseDate: "", description: "", tags: "", posterUrl: "", linkTrailer: ""
+  });
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
       ...form,
-      tags: (form.tags || "").split(",").map((t) => t.trim()).filter(Boolean),
+      tags: (form.tags || "").split(",").map((t) => t.trim()).filter(Boolean)
     });
     if (!initial) setForm({ title: "", role: "", releaseDate: "", description: "", tags: "", posterUrl: "", linkTrailer: "" });
   };
-
   return (
     <form className="form" onSubmit={handleSubmit}>
       <div className="grid">
@@ -238,17 +332,15 @@ function FilmCard({ item, admin, onEdit, onDelete, onMoveUp, onMoveDown }) {
         {item.description && <p className="desc">{item.description}</p>}
         {item.tags?.length ? (
           <ul className="tags">
-            {item.tags.map((t, i) => (
-              <li key={i} className="tag">{t}</li>
-            ))}
+            {item.tags.map((t, i) => (<li key={i} className="tag">{t}</li>))}
           </ul>
         ) : null}
 
-        <div className="links">
-          {item.linkTrailer && (
+        {item.linkTrailer && (
+          <div className="links">
             <a href={item.linkTrailer} target="_blank" rel="noreferrer" className="link">Watch Trailer</a>
-          )}
-        </div>
+          </div>
+        )}
 
         {admin && (
           <div className="card-actions">
@@ -261,7 +353,7 @@ function FilmCard({ item, admin, onEdit, onDelete, onMoveUp, onMoveDown }) {
         )}
       </div>
 
-      {editing && (
+      {editing && admin && (
         <Modal onClose={() => setEditing(false)}>
           <h3>Edit film</h3>
           <FilmForm
@@ -282,19 +374,4 @@ function FilmCard({ item, admin, onEdit, onDelete, onMoveUp, onMoveDown }) {
   );
 }
 
-function Modal({ children, onClose }) {
-  useEffect(() => {
-    const onEsc = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onEsc);
-    return () => document.removeEventListener("keydown", onEsc);
-  }, [onClose]);
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>×</button>
-        {children}
-      </div>
-    </div>
-  );
-}
+export default Home;

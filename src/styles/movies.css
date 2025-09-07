@@ -1,18 +1,74 @@
-/* ——— Page container with safe space for a fixed NavigationBar ——— */
-.movies-page{
-  max-width:1080px; margin:0 auto; padding:24px;
-  padding-top: calc(72px + env(safe-area-inset-top, 0px)); /* top bar fix */
+/* If you use the same CSS variables from home.css, they’re reused here. */
+:root{
+  --brand:#8B5CF6; --brand-deep:#5B21B6; --ink:#0B0B0F; --card:#121217;
+  --text:#EDEDF2; --muted:#9CA3AF; --accent:#F59E0B;
+  --border: rgba(255,255,255,.10);
+  --border-subtle: rgba(255,255,255,.06);
 }
 
-/* ——— Header bar (reuses .header--brand styles from home.css) ——— */
+.admin-chip{
+  position: fixed;
+  bottom: 16px; right: 16px;
+  padding: 6px 10px;
+  font-size: 12px; font-weight: 600;
+  color: #fff;
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 999px;
+  z-index: 2000;
+  opacity: .6;
+  cursor: pointer;
+}
+.admin-chip:hover{ opacity: 1; }
+
+/* --- Ensure full-bleed 16:9 posters on Movies page --- */
+.movies-page .movie-card .poster-wrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+}
+
+.movies-page .movie-card .poster {
+  position: absolute; inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 0;
+  transform: scale(1.02);
+}
+
+/* Container – NO extra top padding (we'll use sticky instead) */
+.movies-page{
+  max-width:1080px; margin:0 auto;
+  padding:12px 24px 24px;
+}
+
+/* Sticky stack for Navigation + header */
+.sticky-shell{
+  position: sticky; top: 0; z-index: 300;
+  /* backdrop & solid bg so content doesn’t show through */
+  background:
+    linear-gradient(180deg, rgba(139,92,246,.08), transparent 120%),
+    var(--ink);
+  border-bottom:1px dashed rgba(139,92,246,.25);
+  /* small internal padding so header has breathing room */
+  padding-bottom: 8px;
+}
+
+/* Header bar */
 .movies-header{
   display:flex; align-items:center; justify-content:space-between; gap:16px;
-  padding:14px 0 18px 0;
+  padding:10px 0 6px 0;
 }
+.brand-left{ display:flex; align-items:center; gap:12px; cursor:pointer; }
+.brand-logo{ height:48px; width:auto; filter:drop-shadow(0 2px 8px rgba(0,0,0,.4)); }
+.brand-titles .title{ margin:0; line-height:1; letter-spacing:.2px; }
+.subtitle{ margin:2px 0 0; color:var(--muted); font-size:0.9rem; }
+
 .add-movie-form{
   display:flex; align-items:center; gap:8px;
   background: rgba(255,255,255,.03);
-  padding:6px; border-radius:999px; border:1px solid var(--border, rgba(255,255,255,.10));
+  padding:6px; border-radius:999px; border:1px solid var(--border);
   box-shadow: 0 2px 12px rgba(0,0,0,.15) inset;
 }
 .add-movie-form input{
@@ -21,23 +77,24 @@
   padding: 10px 12px; font: inherit;
 }
 .add-movie-form input::placeholder{ color: var(--muted); }
-.add-movie-form .btn.primary{ border-radius:999px; }
-
-/* ——— Watermark ——— */
-.movies-hero{ position:relative; height:60px; }
-.movies-watermark{
-  position:absolute; right:0; top:-26px; opacity:.05; width:min(420px, 48vw);
-  pointer-events:none; user-select:none;
+.btn{
+  padding:10px 14px; border:1px solid var(--border); border-radius:12px;
+  background:rgba(255,255,255,.02); color:var(--text); cursor:pointer;
 }
+.btn.primary{ background:var(--brand); border-color:var(--brand); color:#fff; }
+.btn.primary:hover{ background:var(--brand-deep); border-color:var(--brand-deep); }
 
-/* ——— Grid + Cards (poster first, 9:16) ——— */
+/* Grid spacing under sticky header */
 .movies-grid{
+  margin-top: 16px;
   display:grid; gap:16px;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
+
+/* Cards – 16:9 posters */
 .movie-card{
   background: var(--card);
-  border:1px solid var(--border, rgba(255,255,255,.06));
+  border:1px solid var(--border-subtle);
   border-radius:16px; overflow:hidden;
   transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease;
   cursor:pointer; position:relative;
@@ -50,22 +107,25 @@
 
 .poster-wrap{
   position:relative;
-  /* LANDSCAPE (16:9) */
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 16 / 9; /* LANDSCAPE */
   width:100%;
   background:#0E0F13;
 }
-.poster{
-  position:absolute; inset:0; width:100%; height:100%;
-  object-fit: cover; object-position: center;
-  transform: scale(1.02); /* tiny zoom for edge fill */
-}
+.movie-poster{ 
+  position:absolute; 
+  inset:0; width:100%; height:100%; 
+  object-fit:cover; 
+  object-position:center; 
+  transform:scale(1.02); }
+
 .poster-gradient{
   position:absolute; inset:0;
   background:
     linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,.65) 90%),
     linear-gradient(0deg, rgba(0,0,0,.18), rgba(0,0,0,.18));
 }
+
+/* Top badges (date + delete) */
 .poster-top{
   position:absolute; top:8px; left:8px; right:8px; display:flex; gap:8px;
 }
@@ -81,12 +141,15 @@
 }
 .delete-button:hover{ background: rgba(255, 77, 77, .6); border-color: rgba(255,77,77,.9); }
 
+/* Bottom info reveals on hover (keeps focus on poster) */
 .poster-bottom{
   position:absolute; left:12px; right:12px; bottom:12px;
   padding:12px; border-radius:12px;
   background: linear-gradient(180deg, rgba(0,0,0,.0), rgba(0,0,0,.55));
   transform: translateY(10px); opacity:0; transition: .22s ease;
 }
+.movie-card:hover .poster-bottom{ transform: translateY(0); opacity:1; }
+
 .movie-title{ margin:0; font-size:1rem; line-height:1.25; }
 .movie-desc{
   margin:4px 0 0; color:#d3d5db; font-size:.88rem; opacity:.95;
@@ -94,26 +157,20 @@
 }
 .cta{ display:block; margin-top:6px; font-size:.8rem; color:var(--brand); font-weight:700; }
 
-.movie-card:hover .poster-bottom{ transform: translateY(0); opacity:1; }
-
-/* Blur the grid behind modal for fancy feel */
+/* Blur when modal open */
 .blur-background { filter: blur(2px); pointer-events:none; user-select:none; }
 
-/* ——— Modal player ——— */
+/* Modal player */
 .video-modal-overlay{
   position:fixed; inset:0; background:rgba(0,0,0,.6);
   display:flex; align-items:center; justify-content:center; padding:16px; z-index:1000;
 }
 .video-modal{
-  background: var(--card); border:1px solid var(--border, rgba(255,255,255,.10));
+  background: var(--card); border:1px solid var(--border);
   border-radius:16px; width:min(980px, 96vw); padding:8px; box-shadow:0 20px 60px rgba(0,0,0,.45);
 }
-.video-player{
-  width:100%; height:min(70vh, 60vw); border:0; border-radius:12px; display:block;
-}
-.modal-open{ overflow:hidden; }
+.video-player{ width:100%; height:min(70vh, 60vw); border:0; border-radius:12px; display:block; }
 
-/* ——— Snackbar ——— */
 .snackbar{
   visibility:hidden; min-width: 240px; background:#000; color:#fff; text-align:center;
   border-radius:12px; padding:12px 16px; position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
@@ -123,18 +180,14 @@
 @keyframes fadein{ from{ opacity:0; transform:translate(-50%, 8px);} to{ opacity:1; transform:translate(-50%, 0);} }
 @keyframes fadeout{ from{ opacity:1; } to{ opacity:0; } }
 
-/* ——— Responsive ——— */
+/* Responsive */
 @media (max-width: 900px){
-  .movies-grid{ grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
   .add-movie-form input{ width:min(54vw, 360px); }
+  .movies-grid{ grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 }
 @media (max-width: 720px){
-  .movies-page{ padding-top: 88px; }
-  .movies-grid{ grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-  .movies-header{ flex-direction:column; align-items:flex-start; gap:12px; }
+  .movies-header{ flex-direction:column; align-items:flex-start; gap:10px; }
   .add-movie-form{ width:100%; }
   .add-movie-form input{ width:100%; }
-  .movies-hero{ height:44px; }
-  .movies-watermark{ width:min(300px, 60vw); top:-18px; }
+  .movies-grid{ grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 }
-
