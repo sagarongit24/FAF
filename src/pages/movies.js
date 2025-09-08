@@ -14,6 +14,7 @@ import {
   signInWithEmailLink,
   signOut
 } from "firebase/auth";
+import "../styles/global.css";
 import "../styles/movies.css";
 
 /** >>>>>>>>>> PUT YOUR ADMIN UID(S) HERE <<<<<<<<<< */

@@ -1,0 +1,20 @@
+/* Prevent horizontal jump when content causes a vertical scrollbar */
+html {
+  scrollbar-gutter: stable both-edges; /* modern browsers */
+}
+
+/* Fallback for older browsers */
+@supports not (scrollbar-gutter: stable) {
+  html { overflow-y: scroll; } /* always reserve gutter */
+}
+
+/* Make sure the sticky stack always occupies full width of the container */
+.sticky-shell { width: 100%; }
+
+:root { --page-max: 1200px; }           /* bump from 1080 if you like */
+.home-root, .movies-page, .music-page, .gallery-page,
+.team-page, .studio-page, .services-page, .stills-page, .timeline-page {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 12px 24px 24px;
+}

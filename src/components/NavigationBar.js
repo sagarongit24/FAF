@@ -1,31 +1,21 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
+import "./NavigationBar.css";
 
-function NavigationBar() {
-  const linkBase =
-    "px-3 py-1 rounded-md transition-colors duration-150";
-  const active = "text-white";
-  const inactive = "text-white/70 hover:text-white";
-
+export default function NavigationBar() {
   return (
-    <nav
-      className="navbar bg-[#1a1f2b] text-white h-16 flex items-center justify-center gap-8 border-t border-white/10"
-      aria-label="Primary"
-    >
-      <NavLink to="/" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>
-        Home
-      </NavLink>
-      <NavLink to="/movies" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>
-        Movies
-      </NavLink>
-      <NavLink to="/music" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>
-        Music
-      </NavLink>
-      <NavLink to="/gallery" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>
-        Gallery
-      </NavLink>
+    <nav className="navbar">
+      <div className="nav-inner">
+        <NavLink to="/" end>Home</NavLink>
+        <NavLink to="/movies">Movies</NavLink>
+        <NavLink to="/music">Music</NavLink>
+        <NavLink to="/gallery">Gallery</NavLink>
+        <NavLink to="/stills">Stills</NavLink>
+        <NavLink to="/team">Team</NavLink>
+        <NavLink to="/studio">Studio</NavLink>
+        <NavLink to="/services">Services</NavLink>
+        <NavLink to="/timeline">Timeline</NavLink>
+      </div>
     </nav>
   );
 }
-
-export default NavigationBar;
