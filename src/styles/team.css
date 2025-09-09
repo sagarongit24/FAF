@@ -1,0 +1,40 @@
+/* layout */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 16px 0 32px;
+}
+.team-card.card {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* 1:1 avatar (square) */
+.avatar-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #0E0F13;
+  overflow: hidden;
+}
+.avatar-sq {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* body */
+.team-body { padding: 12px 14px 14px; }
+.team-name { margin: 0 0 4px; }
+.team-role { margin: 0 0 8px; opacity: .85; }
+.team-bio  { margin: 0; opacity: .92; }
+
+/* form helpers */
+.grid-4 {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr auto;
+  gap: 8px;
+}
+.state.error { color: #ff7272; margin: 10px 0; }
+.state.note   { opacity: .8; margin: 10px 0; }
