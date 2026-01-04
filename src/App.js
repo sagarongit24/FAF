@@ -1,31 +1,36 @@
+// src/App.js  (OVERRIDE)
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+import NavigationBar from "./components/navigation";
+
 import Home from "./pages/home";
-import MoviesPage from "./pages/movies";
-import MusicPage from "./pages/music";
-import GalleryPage from "./pages/galllery";
-import TeamPage from "./pages/TeamPage";
-import StudioPage from "./pages/StudioPage";
-import ServicesPage from "./pages/ServicesPage";
+import Movies from "./pages/movies";
+import Music from "./pages/music";
+import Gallery from "./pages/gallery";
 import StillsPage from "./pages/StillsPage";
+import TeamPage from "./pages/TeamPage";
+import ServicesPage from "./pages/ServicesPage";
+import StudioPage from "./pages/StudioPage";
 import TimelinePage from "./pages/TimelinePage";
 
-function App() {
+export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
+      <NavigationBar />
+      <div className="nav-spacer" />
       <Routes>
-        <Route path="/movies" element={<MoviesPage />} />
-        <Route path="/music" element={<MusicPage />} />
-        <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/movies" element={<Movies />} />
+        <Route path="/music" element={<Music />} />
+        <Route path="/gallery" element={<Gallery />} />
         <Route path="/stills" element={<StillsPage />} />
         <Route path="/team" element={<TeamPage />} />
-        <Route path="/studio" element={<StudioPage />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/studio" element={<StudioPage />} />
         <Route path="/timeline" element={<TimelinePage />} />
-        <Route path="*" element={<Home />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
-
-export default App;

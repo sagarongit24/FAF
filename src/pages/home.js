@@ -1,119 +1,14 @@
-import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
+// src/pages/home.js
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  getAuth,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
-  sendSignInLinkToEmail,
-  isSignInWithEmailLink,
-  signInWithEmailLink,
-  signOut
-} from "firebase/auth";
-import NavigationBar from "../components/NavigationBar";
+import { getAuth, signOut } from "firebase/auth";
+import { useAdmin, useLongPress } from "../lib/admin";
+import LoginModal from "../components/LoginModal";
 import "../styles/home.css";
 
 const LOGO_SRC = "/brand/broadneck.png";
-/** >>>>>>>>>> PUT YOUR ADMIN UID(S) HERE <<<<<<<<<< */
-const ADMIN_UIDS = ["ADMIN_UIDS"];
 
-/* ---------- Hidden long-press trigger ---------- */
-function useLongPress(callback, ms = 1200) {
-  const timerRef = useRef(null);
-  const start = useCallback(() => { timerRef.current = setTimeout(callback, ms); }, [callback, ms]);
-  const clear = useCallback(() => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
-  return {
-    onMouseDown: start, onTouchStart: start,
-    onMouseUp: clear, onMouseLeave: clear, onTouchEnd: clear
-  };
-}
-
-/* ---------- Admin state (checks UID allow-list) ---------- */
-function useAdmin() {
-  const [user, setUser] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  useEffect(() => {
-    const auth = getAuth();
-    return onAuthStateChanged(auth, async (u) => {
-      setUser(u || null);
-      const allowed = !!u && ADMIN_UIDS.includes(u.uid);
-      setIsAdmin(allowed);
-      if (u) console.log("Signed in:", u.email, "UID:", u.uid);
-    });
-  }, []);
-  return { user, isAdmin };
-}
-
-/* ---------- Minimal Login Modal (Google + optional magic link) ---------- */
-function LoginModal({ onClose }) {
-  const auth = getAuth();
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      const stored = window.localStorage.getItem("admin-email") || window.prompt("Confirm your email");
-      if (stored) {
-        signInWithEmailLink(auth, stored, window.location.href)
-          .then(() => onClose())
-          .catch((e) => console.error(e));
-      }
-    }
-  }, [auth, onClose]);
-
-  async function signInGoogle() {
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); onClose(); }
-    catch (e) { console.error(e); alert("Google sign-in failed"); }
-  }
-  async function sendMagicLink() {
-    const actionCodeSettings = { url: window.location.origin, handleCodeInApp: true };
-    try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem("admin-email", email);
-      alert("Magic link sent. Check your email.");
-    } catch (e) { console.error(e); alert("Failed to send link."); }
-  }
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e)=>e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>×</button>
-        <h3>Admin Sign-In</h3>
-        <p style={{opacity:.8, marginTop:4}}>Hidden login for site owner.</p>
-
-        <div style={{display:"flex", gap:8, margin:"12px 0"}}>
-          <button className="btn primary" onClick={signInGoogle}>Sign in with Google</button>
-          <button className="btn" onClick={() => signOut(auth)}>Sign out</button>
-        </div>
-
-        <div style={{marginTop:10, borderTop:"1px solid rgba(255,255,255,.12)", paddingTop:10}}>
-          <p style={{margin:"6px 0 8px"}}>Or get a magic link:</p>
-          <input
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e)=>setEmail(e.target.value)}
-            style={{padding:10, width:"100%"}}
-          />
-          <div className="actions" style={{marginTop:8}}>
-            <button className="btn" onClick={sendMagicLink}>Send magic link</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- Film Timeline local model ---------- */
-/**
- * @typedef {Object} FilmItem
- * @property {string} id
- * @property {string} title
- * @property {string} role
- * @property {string} releaseDate // YYYY or YYYY-MM
- * @property {string} description
- * @property {string[]} tags
- * @property {string} posterUrl
- * @property {string} linkTrailer
- */
+/* ==================== LOCAL STORAGE ==================== */
 const STORAGE_KEY = "portfolio.filmTimeline.v1";
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -122,19 +17,29 @@ function readFromStorage() {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
-  } catch { return []; }
-}
-function writeToStorage(items) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch {}
+  } catch {
+    return [];
+  }
 }
 
-/* ---------- Reusable Modal for timeline edit ---------- */
+function writeToStorage(items) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch (e) {
+    console.error("Failed to save to localStorage:", e);
+  }
+}
+
+/* ==================== REUSABLE MODAL ==================== */
 function Modal({ children, onClose }) {
   useEffect(() => {
-    const onEsc = (e) => { if (e.key === "Escape") onClose(); };
+    const onEsc = (e) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", onEsc);
     return () => document.removeEventListener("keydown", onEsc);
   }, [onClose]);
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -145,137 +50,102 @@ function Modal({ children, onClose }) {
   );
 }
 
-/* ============================== PAGE ============================== */
-function Home() {
-  const navigate = useNavigate();
-  const { isAdmin } = useAdmin();
-  const [loginOpen, setLoginOpen] = useState(false);
-  const longPress = useLongPress(() => setLoginOpen(true), 1200);
-
-  // Optional: keyboard shortcut to sign out (Ctrl+Shift+L)
-  useEffect(() => {
-    const auth = getAuth();
-    const onKey = (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "l") signOut(auth);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  // Local timeline data (admin-only editable; persisted to localStorage)
-  const [items, setItems] = useState(() => readFromStorage());
-  useEffect(() => { writeToStorage(items); }, [items]);
-
-  const sortedItems = useMemo(() => {
-    const normalize = (d) => (d || "0000-00").padEnd(7, "-00");
-    return [...items].sort((a, b) => (normalize(b.releaseDate) > normalize(a.releaseDate) ? 1 : -1));
-  }, [items]);
-
-  function addItem(payload) { setItems((prev) => [{ id: uid(), ...payload }, ...prev]); }
-  function updateItem(id, patch) { setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it))); }
-  function deleteItem(id) { setItems((prev) => prev.filter((it) => it.id !== id)); }
-  function move(id, dir) {
-    const order = sortedItems.map((it) => it.id);
-    const i = order.indexOf(id), j = i + dir;
-    if (i < 0 || j < 0 || j >= order.length) return;
-    const reordered = [...sortedItems];
-    const [moved] = reordered.splice(i, 1);
-    reordered.splice(j, 0, moved);
-    setItems(reordered);
-  }
-
-return (
-    <div className="home-root">
-      {/* Sticky: Navigation + header (exactly like other pages) */}
-      <div className="sticky-shell">
-        <NavigationBar />
-        <header className="header header--brand">
-          <div
-            className="brand-left"
-            onClick={() => navigate("/")}
-            role="button"
-            tabIndex={0}
-          >
-            <img
-              src={LOGO_SRC}
-              alt="Broadneck Films logo"
-              className="brand-logo"
-              {...longPress}
-            />
-            <div className="brand-titles">
-              <h1 className="title">Broadneck Films</h1>
-              <p className="subtitle">Filmography & credits</p>
-            </div>
-          </div>
-
-          {/* ⛔ removed the Show Work button */}
-          {/* <div className="header-actions">
-            <button className="btn primary" onClick={() => navigate("/movies")}>Show Work</button>
-          </div> */}
-        </header>
-      </div>
-
-      {/* Watermark */}
-      <div className="hero">
-        <img src={LOGO_SRC} className="hero-watermark" alt="" aria-hidden="true" />
-      </div>
-
-      {/* Timeline ... (unchanged) */}
-      <section className="timeline">
-        {/* ...your cards... */}
-      </section>
-
-      {/* ⛔ removed bottom footer buttons */}
-      {/* <footer className="footer">
-        <button className="btn ghost" onClick={() => navigate("/music")}>Music</button>
-        <button className="btn ghost" onClick={() => navigate("/gallery")}>Gallery</button>
-      </footer> */}
-
-      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
-
-      {isAdmin && (
-        <button
-          className="admin-chip"
-          onClick={() => signOut(getAuth())}
-          title="Sign out (Ctrl+Shift+L)"
-        >
-          Admin • Sign out
-        </button>
-      )}
-    </div>
-  );
-}
-
-/* ---------- Timeline components ---------- */
+/* ==================== FILM FORM ==================== */
 function FilmForm({ onSubmit, initial }) {
   const [form, setForm] = useState(initial || {
-    title: "", role: "", releaseDate: "", description: "", tags: "", posterUrl: "", linkTrailer: ""
+    title: "",
+    role: "",
+    releaseDate: "",
+    description: "",
+    tags: "",
+    posterUrl: "",
+    linkTrailer: ""
   });
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+
+  const handleChange = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
       ...form,
       tags: (form.tags || "").split(",").map((t) => t.trim()).filter(Boolean)
     });
-    if (!initial) setForm({ title: "", role: "", releaseDate: "", description: "", tags: "", posterUrl: "", linkTrailer: "" });
+    
+    if (!initial) {
+      setForm({
+        title: "",
+        role: "",
+        releaseDate: "",
+        description: "",
+        tags: "",
+        posterUrl: "",
+        linkTrailer: ""
+      });
+    }
   };
+
   return (
     <form className="form" onSubmit={handleSubmit}>
       <div className="grid">
-        <input name="title" value={form.title} onChange={handleChange} placeholder="Film title *" required />
-        <input name="role" value={form.role} onChange={handleChange} placeholder="Your role (Actor / Composer / Director) *" required />
-        <input name="releaseDate" value={form.releaseDate} onChange={handleChange} placeholder="Release (YYYY or YYYY-MM) *" required />
-        <input name="posterUrl" value={form.posterUrl} onChange={handleChange} placeholder="Poster URL (optional)" />
-        <input name="linkTrailer" value={form.linkTrailer} onChange={handleChange} placeholder="Trailer/IMDB/YouTube link (optional)" />
+        <input
+          name="title"
+          value={form.title}
+          onChange={handleChange}
+          placeholder="Film title *"
+          required
+        />
+        <input
+          name="role"
+          value={form.role}
+          onChange={handleChange}
+          placeholder="Your role (Actor / Composer / Director) *"
+          required
+        />
+        <input
+          name="releaseDate"
+          value={form.releaseDate}
+          onChange={handleChange}
+          placeholder="Release (YYYY or YYYY-MM) *"
+          required
+        />
       </div>
-      <textarea name="description" value={form.description} onChange={handleChange} placeholder="Short note about your contribution" rows={3} />
-      <input name="tags" value={form.tags} onChange={handleChange} placeholder="Tags (comma separated) e.g., Short, Feature, Indie" />
-      <div className="actions"><button className="btn primary" type="submit">{initial ? "Save" : "Add"}</button></div>
+      <input
+        name="posterUrl"
+        value={form.posterUrl}
+        onChange={handleChange}
+        placeholder="Poster URL (optional)"
+      />
+      <input
+        name="linkTrailer"
+        value={form.linkTrailer}
+        onChange={handleChange}
+        placeholder="Trailer/IMDB/YouTube link (optional)"
+      />
+      <textarea
+        name="description"
+        value={form.description}
+        onChange={handleChange}
+        placeholder="Short note about your contribution"
+        rows={3}
+      />
+      <input
+        name="tags"
+        value={form.tags}
+        onChange={handleChange}
+        placeholder="Tags (comma separated) e.g., Short, Feature, Indie"
+      />
+      <div className="actions">
+        <button className="btn primary" type="submit">
+          {initial ? "Save Changes" : "Add Film"}
+        </button>
+      </div>
     </form>
   );
 }
 
+/* ==================== FILM CARD ==================== */
 function FilmCard({ item, admin, onEdit, onDelete, onMoveUp, onMoveDown }) {
   const [editing, setEditing] = useState(false);
 
@@ -290,42 +160,69 @@ function FilmCard({ item, admin, onEdit, onDelete, onMoveUp, onMoveDown }) {
 
       <div className="card-body">
         <div className="card-header">
-          {item.posterUrl ? (
-            <img className="poster" src={item.posterUrl} alt={`${item.title} poster`} loading="lazy" />
-          ) : null}
+          {item.posterUrl && (
+            <img
+              className="poster"
+              src={item.posterUrl}
+              alt={`${item.title} poster`}
+              loading="lazy"
+            />
+          )}
           <div>
             <h3 className="card-title">{item.title}</h3>
-            <p className="meta"><strong>{item.role}</strong></p>
+            <p className="meta">
+              <strong>{item.role}</strong>
+            </p>
           </div>
         </div>
 
         {item.description && <p className="desc">{item.description}</p>}
-        {item.tags?.length ? (
+
+        {item.tags?.length > 0 && (
           <ul className="tags">
-            {item.tags.map((t, i) => (<li key={i} className="tag">{t}</li>))}
+            {item.tags.map((t, i) => (
+              <li key={i} className="tag">
+                {t}
+              </li>
+            ))}
           </ul>
-        ) : null}
+        )}
 
         {item.linkTrailer && (
           <div className="links">
-            <a href={item.linkTrailer} target="_blank" rel="noreferrer" className="link">Watch Trailer</a>
+            <a
+              href={item.linkTrailer}
+              target="_blank"
+              rel="noreferrer"
+              className="link"
+            >
+              Watch Trailer
+            </a>
           </div>
         )}
 
         {admin && (
           <div className="card-actions">
-            <button className="btn" onClick={() => setEditing(true)}>Edit</button>
-            <button className="btn danger" onClick={onDelete}>Delete</button>
+            <button className="btn" onClick={() => setEditing(true)}>
+              Edit
+            </button>
+            <button className="btn danger" onClick={onDelete}>
+              Delete
+            </button>
             <div className="spacer" />
-            <button className="btn ghost" onClick={onMoveUp}>↑</button>
-            <button className="btn ghost" onClick={onMoveDown}>↓</button>
+            <button className="btn ghost" onClick={onMoveUp} title="Move up">
+              ↑
+            </button>
+            <button className="btn ghost" onClick={onMoveDown} title="Move down">
+              ↓
+            </button>
           </div>
         )}
       </div>
 
       {editing && admin && (
         <Modal onClose={() => setEditing(false)}>
-          <h3>Edit film</h3>
+          <h3>Edit Film</h3>
           <FilmForm
             initial={{
               title: item.title,
@@ -334,13 +231,186 @@ function FilmCard({ item, admin, onEdit, onDelete, onMoveUp, onMoveDown }) {
               description: item.description,
               tags: (item.tags || []).join(", "),
               posterUrl: item.posterUrl,
-              linkTrailer: item.linkTrailer,
+              linkTrailer: item.linkTrailer
             }}
-            onSubmit={(payload) => { onEdit(payload); setEditing(false); }}
+            onSubmit={(payload) => {
+              onEdit(payload);
+              setEditing(false);
+            }}
           />
         </Modal>
       )}
     </article>
+  );
+}
+
+/* ==================== HOME PAGE ==================== */
+function Home() {
+  const navigate = useNavigate();
+  const { isAdmin } = useAdmin();
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [addingItem, setAddingItem] = useState(false);
+  const longPress = useLongPress(() => setLoginOpen(true), 1200);
+
+  // Keyboard shortcut to sign out (Ctrl+Shift+L)
+  useEffect(() => {
+    const auth = getAuth();
+    const onKey = (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "l") {
+        signOut(auth);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Local timeline data
+  const [items, setItems] = useState(() => readFromStorage());
+
+  useEffect(() => {
+    writeToStorage(items);
+  }, [items]);
+
+  const sortedItems = useMemo(() => {
+    const normalize = (d) => (d || "0000-00").padEnd(7, "-00");
+    return [...items].sort((a, b) =>
+      normalize(b.releaseDate) > normalize(a.releaseDate) ? 1 : -1
+    );
+  }, [items]);
+
+  function addItem(payload) {
+    setItems((prev) => [{ id: uid(), ...payload }, ...prev]);
+  }
+
+  function updateItem(id, patch) {
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
+    );
+  }
+
+  function deleteItem(id) {
+    if (!window.confirm("Delete this film from your timeline?")) return;
+    setItems((prev) => prev.filter((it) => it.id !== id));
+  }
+
+  function move(id, dir) {
+    const order = sortedItems.map((it) => it.id);
+    const i = order.indexOf(id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= order.length) return;
+    
+    const reordered = [...sortedItems];
+    const [moved] = reordered.splice(i, 1);
+    reordered.splice(j, 0, moved);
+    setItems(reordered);
+  }
+
+  return (
+    <div className="home-root">
+      <div className="sticky-shell">
+        <header className="header header--brand">
+          <div
+            className="brand-left"
+            onClick={() => navigate("/")}
+            role="button"
+            tabIndex={0}
+            onKeyPress={(e) => e.key === "Enter" && navigate("/")}
+          >
+            <img
+              src={LOGO_SRC}
+              alt="Broadneck Films logo"
+              className="brand-logo"
+              {...longPress}
+            />
+            <div className="brand-titles">
+              <h1 className="title">Broadneck Films</h1>
+              <p className="subtitle">Filmography & Credits</p>
+            </div>
+          </div>
+
+          {isAdmin && (
+            <div className="header-actions">
+              <button
+                className="btn primary"
+                onClick={() => setAddingItem(true)}
+              >
+                Add Film
+              </button>
+            </div>
+          )}
+        </header>
+      </div>
+
+      {/* Watermark */}
+      <div className="hero">
+        <img
+          src={LOGO_SRC}
+          className="hero-watermark"
+          alt=""
+          aria-hidden="true"
+        />
+      </div>
+
+      {/* Timeline */}
+      <section className="timeline">
+        {sortedItems.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">🎬</div>
+            <h3>No Films Yet</h3>
+            <p>
+              Your filmography timeline will appear here once you add your first
+              project.
+            </p>
+            {isAdmin && (
+              <button
+                className="btn primary"
+                onClick={() => setAddingItem(true)}
+              >
+                Add Your First Film
+              </button>
+            )}
+          </div>
+        ) : (
+          sortedItems.map((item) => (
+            <FilmCard
+              key={item.id}
+              item={item}
+              admin={isAdmin}
+              onEdit={(patch) => updateItem(item.id, patch)}
+              onDelete={() => deleteItem(item.id)}
+              onMoveUp={() => move(item.id, -1)}
+              onMoveDown={() => move(item.id, 1)}
+            />
+          ))
+        )}
+      </section>
+
+      {/* Modals */}
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+
+      {addingItem && isAdmin && (
+        <Modal onClose={() => setAddingItem(false)}>
+          <h3>Add New Film</h3>
+          <FilmForm
+            onSubmit={(data) => {
+              addItem(data);
+              setAddingItem(false);
+            }}
+          />
+        </Modal>
+      )}
+
+      {/* Admin chip */}
+      {isAdmin && (
+        <button
+          className="admin-chip"
+          onClick={() => signOut(getAuth())}
+          title="Sign out (Ctrl+Shift+L)"
+        >
+          Admin • Sign out
+        </button>
+      )}
+    </div>
   );
 }
 

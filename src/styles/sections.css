@@ -3,15 +3,17 @@
   --text:#EDEDF2; --muted:#9CA3AF; --border:rgba(255,255,255,.10);
 }
 
-/* sticky header used on all pages already */
+/* Shared sticky header used on some pages */
 .sticky-shell{
-  position: sticky; top: 0; z-index: 300;
+  position: sticky;
+  top: var(--navH);
+  z-index: 300;
   background: linear-gradient(180deg, rgba(139,92,246,.08), transparent 120%), var(--ink);
   border-bottom:1px dashed rgba(139,92,246,.25);
   padding-bottom:8px;
 }
 
-/* header row */
+/* Header row */
 .section-header{
   display:flex; align-items:center; justify-content:space-between;
   gap:16px; padding:10px 0 6px;
@@ -21,14 +23,11 @@
 .brand-titles .title{ margin:0; line-height:1; }
 .subtitle{ margin:2px 0 0; color:var(--muted); font-size:0.9rem; }
 
-/* faint logo bg */
+/* Faint watermark behind header */
 .section-hero{ position:relative; height:56px; }
-.section-watermark{
-  position:absolute; right:0; top:-22px; opacity:.06; width:min(420px, 50vw);
-  pointer-events:none; user-select:none;
-}
+.section-watermark{ position:absolute; right:0; top:-22px; opacity:.06; width:min(420px, 50vw); pointer-events:none; user-select:none; }
 
-/* basic grid cards */
+/* Generic card grid */
 .card-grid{ display:grid; gap:16px; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); margin-top:16px; }
 .card{
   background:var(--card); border:1px solid rgba(255,255,255,.06);

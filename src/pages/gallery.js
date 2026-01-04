@@ -1,6 +1,5 @@
 // src/pages/GalleryPage.jsx
 import React, { useState } from "react";
-import NavigationBar from "../components/NavigationBar";
 import "../styles/gallery.css";
 
 const LOGO = "/brand/broadneck.png";
@@ -10,9 +9,8 @@ export default function GalleryPage() {
 
   return (
     <div className="gallery-page">
-      {/* Sticky stack: nav + header */}
+      {/* Sticky header */}
       <div className="sticky-shell">
-        <NavigationBar />
         <header className="gallery-header header--brand">
           <div className="brand-left">
             <img src={LOGO} alt="Broadneck Films" className="brand-logo" />
@@ -25,7 +23,7 @@ export default function GalleryPage() {
             <input
               className="search"
               value={search}
-              onChange={(e)=>setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search sessions…"
             />
           </div>
@@ -34,13 +32,24 @@ export default function GalleryPage() {
 
       {/* Watermark */}
       <div className="gallery-hero">
-        <img src={LOGO} className="gallery-watermark" alt="" aria-hidden="true" />
+        <img
+          src={LOGO}
+          className="gallery-watermark"
+          alt=""
+          aria-hidden="true"
+        />
       </div>
 
-      {/* Album grid – empty for now; we’ll populate next */}
+      {/* Album grid */}
       <div className="album-grid">
-        {/* coming next: map over albums */}
-        <div className="album-empty">No sessions yet. (We’ll add uploads next.)</div>
+        <div className="empty-state">
+          <div className="empty-icon">📸</div>
+          <h3>No Sessions Yet</h3>
+          <p>
+            Gallery sessions, behind-the-scenes photos, and stills will appear
+            here.
+          </p>
+        </div>
       </div>
     </div>
   );
