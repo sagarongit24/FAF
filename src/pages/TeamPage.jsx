@@ -13,7 +13,6 @@ import { getAuth, signOut } from "firebase/auth";
 import { useAdmin, useLongPress } from "../lib/admin";
 import LoginModal from "../components/LoginModal";
 import { uploadTeamImage } from "../lib/uploader";
-import "../styles/team.css";
 
 const LOGO = "/brand/broadneck.png";
 
@@ -179,7 +178,7 @@ export default function TeamPage() {
       ) : (
         <div className="team-grid">
           {members.map((m) => (
-            <article key={m.id} className="team-card">
+            <article key={m.id} className="team-card card">
               <div className="avatar-wrap">
                 <img
                   className="avatar-sq"

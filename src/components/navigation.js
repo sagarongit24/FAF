@@ -1,7 +1,6 @@
 // src/components/Navigation.jsx
 import React from "react";
 import { NavLink } from "react-router-dom";
-import "../styles/nav.css";
 
 const LOGO = "/brand/broadneck.png";
 
@@ -27,9 +26,6 @@ export default function Navigation() {
         <NavLink to="/gallery" className="nav-link">
           Gallery
         </NavLink>
-        <NavLink to="/stills" className="nav-link">
-          Stills
-        </NavLink>
         <NavLink to="/team" className="nav-link">
           Team
         </NavLink>
@@ -38,9 +34,6 @@ export default function Navigation() {
         </NavLink>
         <NavLink to="/services" className="nav-link">
           Services
-        </NavLink>
-        <NavLink to="/timeline" className="nav-link">
-          Timeline
         </NavLink>
       </div>
 

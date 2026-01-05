@@ -13,8 +13,6 @@ import {
 import { getAuth, signOut } from "firebase/auth";
 import { useAdmin, useLongPress, showSnackbar } from "../lib/admin";
 import LoginModal from "../components/LoginModal";
-import "../styles/global.css";
-import "../styles/movies.css";
 
 const LOGO = "/brand/broadneck.png";
 
@@ -214,7 +212,7 @@ function MoviesPage() {
             return (
               <article
                 key={movie.id}
-                className="movie-card"
+                className="movie-card card"
                 onClick={() => setSelectedMovie(movie)}
                 title="Play trailer"
               >

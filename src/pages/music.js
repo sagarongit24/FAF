@@ -2,18 +2,17 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebaseConfig";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import "../styles/music.css";
 
 const LOGO = "/brand/broadneck.png";
 
 /**
  * Expected Firestore doc shape in /music:
  * {
- *   title: string,          // track or session title
- *   artist?: string,        // optional: you / collaborators
+ *   title: string,
+ *   artist?: string,
  *   released?: string,      // YYYY-MM-DD
- *   coverUrl?: string,      // optional image url (or storage download URL)
- *   url?: string,           // optional streaming link (YT/Spotify/etc.)
+ *   coverUrl?: string,
+ *   url?: string,           // streaming link
  *   tags?: string[]
  * }
  */
@@ -40,7 +39,6 @@ export default function MusicPage() {
     } catch (e) {
       console.error("Error loading music:", e);
       
-      // Friendly message if rules aren't set yet
       if (e?.message?.includes("Missing or insufficient permissions")) {
         setError(
           "Can't read /music yet. Update Firestore rules to allow public read."
@@ -118,7 +116,7 @@ export default function MusicPage() {
       ) : (
         <div className="track-grid">
           {filteredTracks.map((t) => (
-            <article key={t.id} className="track-card">
+            <article key={t.id} className="track-card card">
               <div className="cover-wrap">
                 {t.coverUrl ? (
                   <img

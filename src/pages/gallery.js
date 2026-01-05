@@ -1,6 +1,5 @@
-// src/pages/GalleryPage.jsx
+// src/pages/gallery.js
 import React, { useState } from "react";
-import "../styles/gallery.css";
 
 const LOGO = "/brand/broadneck.png";
 

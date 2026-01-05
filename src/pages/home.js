@@ -1,10 +1,9 @@
-// src/pages/home.js
+// src/pages/home.js - WITH BROADNECK FILMS PRE-LOADED
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuth, signOut } from "firebase/auth";
 import { useAdmin, useLongPress } from "../lib/admin";
 import LoginModal from "../components/LoginModal";
-import "../styles/home.css";
 
 const LOGO_SRC = "/brand/broadneck.png";
 
@@ -12,13 +11,88 @@ const LOGO_SRC = "/brand/broadneck.png";
 const STORAGE_KEY = "portfolio.filmTimeline.v1";
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+// BROADNECK FILMS - Pre-populated data
+const INITIAL_FILMS = [
+  {
+    id: "yaaru-yenu",
+    title: "YAARU YENU MADUVARU | Episode 1 - LIGHTS",
+    role: "Director, Writer",
+    releaseDate: "2025-08",
+    description: "A night at the bar turns uneasy when an old debt resurfaces. Three friends follow a lead promising solution, only to find themselves pulled into a spiral of chaos.",
+    tags: ["Action", "Thriller", "Series"],
+    posterUrl: "",
+    linkTrailer: "https://www.youtube.com/@broadneckfilms"
+  },
+  {
+    id: "purloined",
+    title: "PURLOINED POSSESSION",
+    role: "Writer & Director: Davis",
+    releaseDate: "2024-12",
+    description: "In his pursuit of a master of disguise, Vinay finds himself drawn into a world where deception reigns and identities are fluid, forcing him to confront the shadows within himself.",
+    tags: ["Mystery", "Thriller", "Psychological"],
+    posterUrl: "",
+    linkTrailer: "https://www.youtube.com/@broadneckfilms"
+  },
+  {
+    id: "venus",
+    title: "VENUS: TRY FLAP",
+    role: "Writer & Director: Vamshi",
+    releaseDate: "2024-10",
+    description: "In the bustling, mist-laden Silicon City of 2028, Shukra stumbles upon a mysterious bag of oranges. What seems trivial quickly spirals into an unexpected journey.",
+    tags: ["Sci-Fi", "Mystery", "Experimental"],
+    posterUrl: "",
+    linkTrailer: "https://www.youtube.com/@broadneckfilms"
+  },
+  {
+    id: "surface",
+    title: "SURFACE TENSION",
+    role: "Writer & Director: Vamshi",
+    releaseDate: "2024-07",
+    description: "Rudra Residency seems to have a problem within its walls. Vivek and Sampath soon discover that their metal tools are of no use to fix the real issue hidden underneath.",
+    tags: ["Mystery", "Short Film", "Suspense"],
+    posterUrl: "",
+    linkTrailer: "https://www.youtube.com/@broadneckfilms"
+  },
+  {
+    id: "unfinished",
+    title: "UNFINISHED HOPE",
+    role: "Writer & Director: Srikanth Richi",
+    releaseDate: "2024-04",
+    description: "A woman's life takes a complex turn when she forgets to take her Hallucination pills while also discovering a personal connection to the case of a missing person.",
+    tags: ["Thriller", "Psychological", "Kannada"],
+    posterUrl: "",
+    linkTrailer: "https://www.youtube.com/@broadneckfilms"
+  },
+  {
+    id: "spaced",
+    title: "SPACED OUT",
+    role: "Writer & Director: Hari Haran R",
+    releaseDate: "2023-01",
+    description: "An exploration of isolation and psychological space.",
+    tags: ["Experimental", "Psychological"],
+    posterUrl: "",
+    linkTrailer: "https://www.youtube.com/@broadneckfilms"
+  },
+  {
+    id: "amygdala",
+    title: "AMYGDALA",
+    role: "Writer & Director: Sohan Shetty C",
+    releaseDate: "2022-01",
+    description: "A deep dive into fear, memory, and the human psyche.",
+    tags: ["Psychological", "Drama", "Experimental"],
+    posterUrl: "",
+    linkTrailer: "https://www.youtube.com/@broadneckfilms"
+  }
+];
+
 function readFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!raw) return INITIAL_FILMS; // Return pre-loaded films if nothing in storage
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_FILMS;
   } catch {
-    return [];
+    return INITIAL_FILMS;
   }
 }
 
@@ -100,7 +174,7 @@ function FilmForm({ onSubmit, initial }) {
           name="role"
           value={form.role}
           onChange={handleChange}
-          placeholder="Your role (Actor / Composer / Director) *"
+          placeholder="Your role (Director / Writer / Composer) *"
           required
         />
         <input
@@ -121,20 +195,20 @@ function FilmForm({ onSubmit, initial }) {
         name="linkTrailer"
         value={form.linkTrailer}
         onChange={handleChange}
-        placeholder="Trailer/IMDB/YouTube link (optional)"
+        placeholder="Trailer/YouTube link (optional)"
       />
       <textarea
         name="description"
         value={form.description}
         onChange={handleChange}
-        placeholder="Short note about your contribution"
+        placeholder="Short synopsis"
         rows={3}
       />
       <input
         name="tags"
         value={form.tags}
         onChange={handleChange}
-        placeholder="Tags (comma separated) e.g., Short, Feature, Indie"
+        placeholder="Tags (comma separated) e.g., Thriller, Mystery, Short Film"
       />
       <div className="actions">
         <button className="btn primary" type="submit">
@@ -196,7 +270,7 @@ function FilmCard({ item, admin, onEdit, onDelete, onMoveUp, onMoveDown }) {
               rel="noreferrer"
               className="link"
             >
-              Watch Trailer
+              Watch Film
             </a>
           </div>
         )}
@@ -264,7 +338,7 @@ function Home() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Local timeline data
+  // Local timeline data - pre-populated with your films
   const [items, setItems] = useState(() => readFromStorage());
 
   useEffect(() => {
@@ -324,7 +398,7 @@ function Home() {
             />
             <div className="brand-titles">
               <h1 className="title">Broadneck Films</h1>
-              <p className="subtitle">Filmography & Credits</p>
+              <p className="subtitle">Independent Cinema • Bengaluru</p>
             </div>
           </div>
 
@@ -353,36 +427,17 @@ function Home() {
 
       {/* Timeline */}
       <section className="timeline">
-        {sortedItems.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🎬</div>
-            <h3>No Films Yet</h3>
-            <p>
-              Your filmography timeline will appear here once you add your first
-              project.
-            </p>
-            {isAdmin && (
-              <button
-                className="btn primary"
-                onClick={() => setAddingItem(true)}
-              >
-                Add Your First Film
-              </button>
-            )}
-          </div>
-        ) : (
-          sortedItems.map((item) => (
-            <FilmCard
-              key={item.id}
-              item={item}
-              admin={isAdmin}
-              onEdit={(patch) => updateItem(item.id, patch)}
-              onDelete={() => deleteItem(item.id)}
-              onMoveUp={() => move(item.id, -1)}
-              onMoveDown={() => move(item.id, 1)}
-            />
-          ))
-        )}
+        {sortedItems.map((item) => (
+          <FilmCard
+            key={item.id}
+            item={item}
+            admin={isAdmin}
+            onEdit={(patch) => updateItem(item.id, patch)}
+            onDelete={() => deleteItem(item.id)}
+            onMoveUp={() => move(item.id, -1)}
+            onMoveDown={() => move(item.id, 1)}
+          />
+        ))}
       </section>
 
       {/* Modals */}
