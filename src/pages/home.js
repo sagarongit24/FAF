@@ -15,7 +15,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const INITIAL_FILMS = [
   {
     id: "yaaru-yenu",
-    title: "YAARU YENU MADUVARU | Episode 1 - LIGHTS",
+    title: "YAARU YENU MADUVARU",
     role: "Director, Writer",
     releaseDate: "2025-08",
     description: "A night at the bar turns uneasy when an old debt resurfaces. Three friends follow a lead promising solution, only to find themselves pulled into a spiral of chaos.",
